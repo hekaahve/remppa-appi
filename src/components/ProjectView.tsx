@@ -66,6 +66,7 @@ export default function ProjectView({ projects, activeProject, expenses, userEma
   const [showNewProjectModal, setShowNewProjectModal] = useState(false)
   const [editingEntry, setEditingEntry] = useState<Expense | null>(null)
   const [deletingId, setDeletingId] = useState<string | null>(null)
+  const [sidebarOpen, setSidebarOpen] = useState(false)
   const [isPending, startTransition] = useTransition()
 
   const isStartState = activeProject === 'start'
@@ -111,12 +112,34 @@ export default function ProjectView({ projects, activeProject, expenses, userEma
   }
 
   return (
-    <div className="flex h-full">
-      {/* Sidebar */}
-      <aside className="flex w-60 flex-shrink-0 flex-col bg-emerald-900 text-white">
-        <div className="flex items-center gap-2 px-4 py-5">
-          <span className="text-xl">🏠</span>
-          <span className="text-base font-semibold tracking-tight">Remppaappi</span>
+    <div className="relative flex h-full">
+      {/* Mobile overlay behind the sidebar */}
+      {sidebarOpen && (
+        <div
+          className="fixed inset-0 z-30 bg-black/40 md:hidden"
+          onClick={() => setSidebarOpen(false)}
+        />
+      )}
+
+      {/* Sidebar — static on desktop; on mobile drops down from the top */}
+      <aside
+        className={`fixed inset-x-0 top-0 z-40 flex max-h-[85vh] w-full flex-shrink-0 transform flex-col rounded-b-2xl bg-emerald-900 text-white shadow-xl transition-transform duration-200 md:static md:max-h-none md:w-60 md:translate-y-0 md:rounded-none md:shadow-none ${
+          sidebarOpen ? 'translate-y-0' : '-translate-y-full'
+        }`}
+      >
+        <div className="flex items-center justify-between px-4 py-5">
+          <div className="flex items-center gap-2">
+            <span className="text-xl">🏠</span>
+            <span className="text-base font-semibold tracking-tight">Remppaappi</span>
+          </div>
+          {/* Close button — mobile only */}
+          <button
+            onClick={() => setSidebarOpen(false)}
+            className="rounded-lg p-1 text-emerald-300 hover:bg-emerald-800 md:hidden"
+            aria-label="Sulje valikko"
+          >
+            ✕
+          </button>
         </div>
 
         <nav className="flex-1 overflow-y-auto px-2 pb-2">
@@ -129,6 +152,7 @@ export default function ProjectView({ projects, activeProject, expenses, userEma
               <Link
                 key={project.name}
                 href={`/project/${encodeURIComponent(project.name)}`}
+                onClick={() => setSidebarOpen(false)}
                 className={`mb-0.5 block truncate rounded-lg px-3 py-2 text-sm transition ${
                   isActive
                     ? 'bg-emerald-700 font-medium text-white'
@@ -143,7 +167,10 @@ export default function ProjectView({ projects, activeProject, expenses, userEma
 
         <div className="border-t border-emerald-800 p-2">
           <button
-            onClick={() => setShowNewProjectModal(true)}
+            onClick={() => {
+              setSidebarOpen(false)
+              setShowNewProjectModal(true)
+            }}
             className="mb-1 flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-emerald-200 hover:bg-emerald-800"
           >
             <span>＋</span> Uusi projekti
@@ -159,9 +186,9 @@ export default function ProjectView({ projects, activeProject, expenses, userEma
       </aside>
 
       {/* Main content */}
-      <main className="flex flex-1 flex-col overflow-hidden">
+      <main className="flex min-w-0 flex-1 flex-col overflow-hidden">
         {isStartState ? (
-          <div className="flex flex-1 flex-col items-center justify-center text-center">
+          <div className="flex flex-1 flex-col items-center justify-center p-6 text-center">
             <div className="mb-4 text-5xl">🏗️</div>
             <h2 className="mb-2 text-xl font-semibold text-gray-800">Ei vielä projekteja</h2>
             <p className="mb-6 text-sm text-gray-500">
@@ -177,26 +204,42 @@ export default function ProjectView({ projects, activeProject, expenses, userEma
         ) : (
           <div className="flex-1 overflow-auto">
             {/* Page header */}
-            <div className="flex items-center justify-between border-b border-gray-200 bg-white px-6 py-4">
-              <h1 className="text-lg font-semibold text-gray-900">{activeProject}</h1>
-              <div className="flex gap-2">
+            <div className="flex items-center justify-between gap-3 border-b border-gray-200 bg-white px-4 py-3 sm:px-6 sm:py-4">
+              <div className="flex min-w-0 items-center gap-2">
+                {/* Hamburger — mobile only */}
+                <button
+                  onClick={() => setSidebarOpen(true)}
+                  className="-ml-1 rounded-lg p-2 text-gray-600 hover:bg-gray-100 md:hidden"
+                  aria-label="Avaa valikko"
+                >
+                  <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                  </svg>
+                </button>
+                <h1 className="truncate text-base font-semibold text-gray-900 sm:text-lg">
+                  {activeProject}
+                </h1>
+              </div>
+              <div className="flex flex-shrink-0 gap-2">
                 <button
                   onClick={() => openModal('deduction')}
-                  className="rounded-xl border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+                  className="rounded-xl border border-gray-300 px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 sm:px-4"
                 >
-                  − Lisää vähennys
+                  <span className="sm:hidden">−</span>
+                  <span className="hidden sm:inline">− Lisää vähennys</span>
                 </button>
                 <button
                   onClick={() => openModal('expense')}
-                  className="rounded-xl bg-emerald-700 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-800"
+                  className="rounded-xl bg-emerald-700 px-3 py-2 text-sm font-medium text-white hover:bg-emerald-800 sm:px-4"
                 >
-                  + Lisää kulu
+                  <span className="sm:hidden">+ Kulu</span>
+                  <span className="hidden sm:inline">+ Lisää kulu</span>
                 </button>
               </div>
             </div>
 
-            {/* Summary cards */}
-            <div className="grid grid-cols-4 gap-4 bg-white px-6 py-4 shadow-sm">
+            {/* Summary cards — 2×2 on mobile, 4 across on desktop */}
+            <div className="grid grid-cols-2 gap-3 bg-white px-4 py-4 shadow-sm sm:gap-4 sm:px-6 lg:grid-cols-4">
               <SummaryCard
                 title="Kulut yhteensä"
                 value={formatEuro(totalExpenses)}
@@ -221,8 +264,8 @@ export default function ProjectView({ projects, activeProject, expenses, userEma
               />
             </div>
 
-            <div className="px-6 py-4 space-y-6">
-              {/* Expenses table */}
+            <div className="space-y-6 px-4 py-4 sm:px-6">
+              {/* Expenses */}
               <ExpenseTable
                 title="Kulut"
                 rows={positiveExpenses}
@@ -232,12 +275,9 @@ export default function ProjectView({ projects, activeProject, expenses, userEma
                 onConfirmDelete={confirmDelete}
                 onCancelDelete={cancelDelete}
                 onExecuteDelete={executeDelete}
-                renderTypeBadge={(type) =>
-                  isExpenseType(type) ? (
-                    <span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${EXPENSE_TYPE_COLORS[type]}`}>
-                      {EXPENSE_TYPE_LABELS[type]}
-                    </span>
-                  ) : null
+                getTypeLabel={(type) => (isExpenseType(type) ? EXPENSE_TYPE_LABELS[type] : type)}
+                getTypeColor={(type) =>
+                  isExpenseType(type) ? EXPENSE_TYPE_COLORS[type] : 'bg-gray-100 text-gray-600'
                 }
                 emptyLabel="Ei kuluja. Lisää ensimmäinen kulu →"
                 onEmpty={() => openModal('expense')}
@@ -246,7 +286,7 @@ export default function ProjectView({ projects, activeProject, expenses, userEma
                 showPerformer
               />
 
-              {/* Deductions table */}
+              {/* Deductions */}
               <ExpenseTable
                 title="Vähennykset"
                 rows={deductions}
@@ -256,12 +296,9 @@ export default function ProjectView({ projects, activeProject, expenses, userEma
                 onConfirmDelete={confirmDelete}
                 onCancelDelete={cancelDelete}
                 onExecuteDelete={executeDelete}
-                renderTypeBadge={(type) =>
-                  isDeductionType(type) ? (
-                    <span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${DEDUCTION_TYPE_COLORS[type]}`}>
-                      {DEDUCTION_TYPE_LABELS[type]}
-                    </span>
-                  ) : null
+                getTypeLabel={(type) => (isDeductionType(type) ? DEDUCTION_TYPE_LABELS[type] : type)}
+                getTypeColor={(type) =>
+                  isDeductionType(type) ? DEDUCTION_TYPE_COLORS[type] : 'bg-gray-100 text-gray-600'
                 }
                 emptyLabel="Ei vähennyksiä."
                 onEmpty={() => openModal('deduction')}
@@ -273,8 +310,8 @@ export default function ProjectView({ projects, activeProject, expenses, userEma
 
               {/* Net total */}
               <div className="flex justify-end">
-                <div className="rounded-xl border border-gray-200 bg-white px-6 py-3">
-                  <span className="text-sm text-gray-500 mr-4">Netto (kulut − vähennykset)</span>
+                <div className="flex w-full items-center justify-between rounded-xl border border-gray-200 bg-white px-4 py-3 sm:w-auto sm:gap-4">
+                  <span className="text-sm text-gray-500">Netto (kulut − vähennykset)</span>
                   <span className="text-lg font-bold text-gray-900">{formatEuro(netTotal)}</span>
                 </div>
               </div>
@@ -299,7 +336,8 @@ export default function ProjectView({ projects, activeProject, expenses, userEma
   )
 }
 
-// ── Reusable table component ──────────────────────────────────────────────────
+// ── Reusable expenses/deductions list ─────────────────────────────────────────
+// Renders a table on >= md screens and a stacked card list on small screens.
 
 interface ExpenseTableProps {
   title: string
@@ -310,13 +348,26 @@ interface ExpenseTableProps {
   onConfirmDelete: (id: string) => void
   onCancelDelete: () => void
   onExecuteDelete: () => void
-  renderTypeBadge: (type: string) => React.ReactNode
+  getTypeLabel: (type: string) => string
+  getTypeColor: (type: string) => string
   emptyLabel: string
   onEmpty: () => void
   totalLabel: string
   total: number
   showPerformer: boolean
   amountColor?: string
+}
+
+function PaidBadge({ paid }: { paid: boolean }) {
+  return paid ? (
+    <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-emerald-100 text-xs text-emerald-700">
+      ✓
+    </span>
+  ) : (
+    <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-amber-100 text-xs text-amber-600">
+      –
+    </span>
+  )
 }
 
 function ExpenseTable({
@@ -328,7 +379,8 @@ function ExpenseTable({
   onConfirmDelete,
   onCancelDelete,
   onExecuteDelete,
-  renderTypeBadge,
+  getTypeLabel,
+  getTypeColor,
   emptyLabel,
   onEmpty,
   totalLabel,
@@ -336,17 +388,12 @@ function ExpenseTable({
   showPerformer,
   amountColor = 'text-gray-800',
 }: ExpenseTableProps) {
-  function formatEuro(value: number): string {
-    return (
-      value.toLocaleString('fi-FI', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' €'
-    )
-  }
+  const [openMenuId, setOpenMenuId] = useState<string | null>(null)
 
   return (
     <div>
-      <h2 className="mb-2 text-sm font-semibold uppercase tracking-wider text-gray-500">
-        {title}
-      </h2>
+      <h2 className="mb-2 text-sm font-semibold uppercase tracking-wider text-gray-500">{title}</h2>
+
       {rows.length === 0 ? (
         <div className="rounded-xl border border-dashed border-gray-200 px-4 py-6 text-center">
           <p className="text-sm text-gray-400">{emptyLabel}</p>
@@ -358,97 +405,195 @@ function ExpenseTable({
           </button>
         </div>
       ) : (
-        <div className="overflow-hidden rounded-xl border border-gray-200 bg-white">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-gray-100 bg-gray-50 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">
-                <th className="px-4 py-3">Kuvaus</th>
-                {showPerformer && <th className="px-4 py-3">Tekijä</th>}
-                <th className="px-4 py-3">Tyyppi</th>
-                <th className="px-4 py-3 text-right">Summa</th>
-                <th className="px-4 py-3 text-center">Maksettu</th>
-                <th className="px-4 py-3">Päivämäärä</th>
-                <th className="px-4 py-3"></th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-100">
-              {rows.map((row) => (
-                <tr
-                  key={row.id}
-                  className={`group transition hover:bg-gray-50 ${
-                    deletingId === row.id ? 'bg-red-50' : ''
-                  }`}
-                >
-                  <td className="px-4 py-3 font-medium text-gray-800">{row.description}</td>
-                  {showPerformer && (
-                    <td className="px-4 py-3 text-gray-500">{row.performer}</td>
-                  )}
-                  <td className="px-4 py-3">{renderTypeBadge(row.type)}</td>
-                  <td className={`px-4 py-3 text-right font-mono font-medium ${amountColor}`}>
-                    {formatEuro(row.amount)}
-                  </td>
-                  <td className="px-4 py-3 text-center">
-                    {row.paid ? (
-                      <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-emerald-100 text-xs text-emerald-700">
-                        ✓
-                      </span>
-                    ) : (
-                      <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-amber-100 text-xs text-amber-600">
-                        –
-                      </span>
-                    )}
-                  </td>
-                  <td className="px-4 py-3 text-gray-500">{row.date}</td>
-                  <td className="px-4 py-3">
-                    {deletingId === row.id ? (
-                      <div className="flex items-center gap-1">
-                        <button
-                          onClick={onExecuteDelete}
-                          disabled={isPending}
-                          className="rounded-lg bg-red-600 px-2 py-1 text-xs font-medium text-white hover:bg-red-700 disabled:opacity-60"
-                        >
-                          Poista
-                        </button>
-                        <button
-                          onClick={onCancelDelete}
-                          className="rounded-lg border border-gray-300 px-2 py-1 text-xs text-gray-600 hover:bg-gray-50"
-                        >
-                          Peru
-                        </button>
-                      </div>
-                    ) : (
-                      <div className="flex items-center gap-1 opacity-0 transition group-hover:opacity-100">
-                        <button
-                          onClick={() => onEdit(row)}
-                          className="rounded-lg px-2 py-1 text-xs text-gray-500 hover:bg-gray-100"
-                        >
-                          Muokkaa
-                        </button>
-                        <button
-                          onClick={() => onConfirmDelete(row.id)}
-                          className="rounded-lg px-2 py-1 text-xs text-red-500 hover:bg-red-50"
-                        >
-                          Poista
-                        </button>
-                      </div>
-                    )}
-                  </td>
+        <>
+          {/* ── Desktop / tablet: table ─────────────────────────────── */}
+          <div className="hidden overflow-hidden rounded-xl border border-gray-200 bg-white md:block">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-gray-100 bg-gray-50 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">
+                  <th className="px-4 py-3">Kuvaus</th>
+                  {showPerformer && <th className="px-4 py-3">Tekijä</th>}
+                  <th className="px-4 py-3">Tyyppi</th>
+                  <th className="px-4 py-3 text-right">Summa</th>
+                  <th className="px-4 py-3 text-center">Maksettu</th>
+                  <th className="px-4 py-3">Päivämäärä</th>
+                  <th className="px-4 py-3"></th>
                 </tr>
-              ))}
-            </tbody>
-            <tfoot>
-              <tr className="border-t-2 border-gray-200 bg-gray-50 font-semibold">
-                <td colSpan={showPerformer ? 3 : 2} className="px-4 py-3 text-gray-600">
-                  {totalLabel}
-                </td>
-                <td className={`px-4 py-3 text-right font-mono ${amountColor}`}>
-                  {formatEuro(total)}
-                </td>
-                <td colSpan={3}></td>
-              </tr>
-            </tfoot>
-          </table>
-        </div>
+              </thead>
+              <tbody className="divide-y divide-gray-100">
+                {rows.map((row) => (
+                  <tr
+                    key={row.id}
+                    className={`group transition hover:bg-gray-50 ${
+                      deletingId === row.id ? 'bg-red-50' : ''
+                    }`}
+                  >
+                    <td className="px-4 py-3 font-medium text-gray-800">{row.description}</td>
+                    {showPerformer && <td className="px-4 py-3 text-gray-500">{row.performer}</td>}
+                    <td className="px-4 py-3">
+                      <span
+                        className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${getTypeColor(row.type)}`}
+                      >
+                        {getTypeLabel(row.type)}
+                      </span>
+                    </td>
+                    <td className={`px-4 py-3 text-right font-mono font-medium ${amountColor}`}>
+                      {formatEuro(row.amount)}
+                    </td>
+                    <td className="px-4 py-3 text-center">
+                      <PaidBadge paid={row.paid} />
+                    </td>
+                    <td className="px-4 py-3 text-gray-500">{row.date}</td>
+                    <td className="px-4 py-3">
+                      {deletingId === row.id ? (
+                        <div className="flex items-center gap-1">
+                          <button
+                            onClick={onExecuteDelete}
+                            disabled={isPending}
+                            className="rounded-lg bg-red-600 px-2 py-1 text-xs font-medium text-white hover:bg-red-700 disabled:opacity-60"
+                          >
+                            Poista
+                          </button>
+                          <button
+                            onClick={onCancelDelete}
+                            className="rounded-lg border border-gray-300 px-2 py-1 text-xs text-gray-600 hover:bg-gray-50"
+                          >
+                            Peru
+                          </button>
+                        </div>
+                      ) : (
+                        <div className="flex items-center gap-1 opacity-0 transition group-hover:opacity-100">
+                          <button
+                            onClick={() => onEdit(row)}
+                            className="rounded-lg px-2 py-1 text-xs text-gray-500 hover:bg-gray-100"
+                          >
+                            Muokkaa
+                          </button>
+                          <button
+                            onClick={() => onConfirmDelete(row.id)}
+                            className="rounded-lg px-2 py-1 text-xs text-red-500 hover:bg-red-50"
+                          >
+                            Poista
+                          </button>
+                        </div>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+              <tfoot>
+                <tr className="border-t-2 border-gray-200 bg-gray-50 font-semibold">
+                  <td colSpan={showPerformer ? 3 : 2} className="px-4 py-3 text-gray-600">
+                    {totalLabel}
+                  </td>
+                  <td className={`px-4 py-3 text-right font-mono ${amountColor}`}>
+                    {formatEuro(total)}
+                  </td>
+                  <td colSpan={3}></td>
+                </tr>
+              </tfoot>
+            </table>
+          </div>
+
+          {/* ── Mobile: compact card list ───────────────────────────── */}
+          <div className="space-y-1 md:hidden">
+            {rows.map((row) => (
+              <div
+                key={row.id}
+                className={`relative rounded-xl border bg-white px-2.5 py-1.5 ${
+                  deletingId === row.id ? 'border-red-300 bg-red-50' : 'border-gray-200'
+                }`}
+              >
+                <div className="flex items-center justify-between gap-2">
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate font-medium text-gray-800">{row.description}</p>
+                    <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1">
+                      <span
+                        className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${getTypeColor(row.type)}`}
+                      >
+                        {getTypeLabel(row.type)}
+                      </span>
+                      <PaidBadge paid={row.paid} />
+                      {showPerformer && row.performer && (
+                        <span className="truncate text-xs text-gray-400">{row.performer}</span>
+                      )}
+                      {row.date && <span className="text-xs text-gray-400">{row.date}</span>}
+                    </div>
+                  </div>
+
+                  <span className={`flex-shrink-0 font-mono text-sm font-semibold ${amountColor}`}>
+                    {formatEuro(row.amount)}
+                  </span>
+
+                  {/* Three-dots menu trigger */}
+                  <button
+                    onClick={() => setOpenMenuId(openMenuId === row.id ? null : row.id)}
+                    className="-mr-2 flex-shrink-0 rounded-lg p-2 text-gray-400 hover:bg-gray-100 hover:text-gray-600"
+                    aria-label="Toiminnot"
+                  >
+                    <svg className="h-5 w-5" viewBox="0 0 24 24" fill="currentColor">
+                      <circle cx="12" cy="5" r="1.6" />
+                      <circle cx="12" cy="12" r="1.6" />
+                      <circle cx="12" cy="19" r="1.6" />
+                    </svg>
+                  </button>
+                </div>
+
+                {/* Dropdown menu */}
+                {openMenuId === row.id && deletingId !== row.id && (
+                  <>
+                    <div className="fixed inset-0 z-10" onClick={() => setOpenMenuId(null)} />
+                    <div className="absolute right-3 top-12 z-20 w-36 overflow-hidden rounded-xl border border-gray-200 bg-white shadow-lg">
+                      <button
+                        onClick={() => {
+                          setOpenMenuId(null)
+                          onEdit(row)
+                        }}
+                        className="block w-full px-4 py-2.5 text-left text-sm text-gray-700 hover:bg-gray-50"
+                      >
+                        Muokkaa
+                      </button>
+                      <button
+                        onClick={() => {
+                          setOpenMenuId(null)
+                          onConfirmDelete(row.id)
+                        }}
+                        className="block w-full border-t border-gray-100 px-4 py-2.5 text-left text-sm text-red-600 hover:bg-red-50"
+                      >
+                        Poista
+                      </button>
+                    </div>
+                  </>
+                )}
+
+                {/* Inline delete confirmation */}
+                {deletingId === row.id && (
+                  <div className="mt-3 flex items-center gap-2 border-t border-red-100 pt-3">
+                    <button
+                      onClick={onExecuteDelete}
+                      disabled={isPending}
+                      className="flex-1 rounded-lg bg-red-600 px-3 py-2 text-sm font-medium text-white hover:bg-red-700 disabled:opacity-60"
+                    >
+                      Vahvista poisto
+                    </button>
+                    <button
+                      onClick={onCancelDelete}
+                      className="flex-1 rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-600 hover:bg-gray-50"
+                    >
+                      Peru
+                    </button>
+                  </div>
+                )}
+              </div>
+            ))}
+
+            {/* Mobile total */}
+            <div className="flex items-center justify-between rounded-xl bg-gray-50 px-4 py-3 font-semibold">
+              <span className="text-sm text-gray-600">{totalLabel}</span>
+              <span className={`font-mono ${amountColor}`}>{formatEuro(total)}</span>
+            </div>
+          </div>
+        </>
       )}
     </div>
   )
@@ -468,7 +613,7 @@ function SummaryCard({
   return (
     <div className="rounded-xl border border-gray-100 bg-gray-50 px-4 py-3">
       <p className="text-xs font-medium text-gray-500">{title}</p>
-      <p className={`mt-1 text-xl font-bold ${valueColor}`}>{value}</p>
+      <p className={`mt-1 text-lg font-bold sm:text-xl ${valueColor}`}>{value}</p>
       {subtitle && <p className="mt-0.5 text-xs text-gray-400">{subtitle}</p>}
     </div>
   )
