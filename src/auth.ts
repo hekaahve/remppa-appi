@@ -1,7 +1,7 @@
 import NextAuth from 'next-auth'
 import Google from 'next-auth/providers/google'
 
-const ALLOWED_EMAILS = ['heini.ahven@gmail.com', 'timetuned@gmail.com']
+const ALLOWED_EMAILS = process.env.ALLOWED_EMAILS ?? ['']
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
   providers: [

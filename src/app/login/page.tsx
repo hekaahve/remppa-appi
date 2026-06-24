@@ -54,7 +54,7 @@ export default async function LoginPage() {
             </button>
           </form>
           <p className="mt-4 text-center text-xs text-gray-400">
-            Vain heini.ahven@gmail.com ja timetuned@gmail.com
+            Vain Heini ja Timo.
           </p>
         </div>
       </div>
